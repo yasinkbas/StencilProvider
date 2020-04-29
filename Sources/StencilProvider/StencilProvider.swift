@@ -1,16 +1,16 @@
 import Vapor
-import Stencil
 import PathKit
+import Stencil
 
 public final class StencilProvider: Provider {
     
-    public init() {}
-    
     public static var path = "Resources/Views/"
     
-    static let stencilPathStr = DirectoryConfig.detect().workDir + path
-    static let stencilPath = Path(stencilPathStr)
-    static let loader: Loader = FileSystemLoader(paths: [stencilPath])
+    static private let workPath = DirectoryConfig.detect().workDir + path
+    static private let _path = Path(workPath)
+    static private let loader: Loader = FileSystemLoader(paths: [_path])
+    
+    public init() {}
     
     public func register(_ services: inout Services) throws {
         services.register([ViewRenderer.self]) { container -> StencilRenderer in
@@ -27,7 +27,7 @@ public final class StencilRenderer: Service {
     
     private let container: Container
     private let stencilEnvironment: Stencil.Environment
-
+    
     init(using container: Container) throws {
         let directoryConfig = DirectoryConfig.detect()
         let stencilPathStr = directoryConfig.workDir + StencilProvider.path
@@ -38,24 +38,27 @@ public final class StencilRenderer: Service {
     }
     
     public func render(_ path: String, _ context: [AnyHashable : Any]) -> Future<View> {
-            let promiseView: Promise<View> = container.eventLoop.newPromise(View.self)
-            
-            DispatchQueue.global().async {
-                do {
-                    let rendered: String = try self.stencilEnvironment.renderTemplate(
-                        name: path,
-                        context: context as? [String : Any]
-                    )
-                    
-                    let renderedData = Data(rendered.utf8)
-                    let view: View = View(data:renderedData)
-                    return promiseView.succeed(result: view)
-                }
-                catch let err {
-                    promiseView.fail(error: err)
-                }
+        let promiseView: Promise<View> = container.eventLoop.newPromise(View.self)
+        
+        DispatchQueue.global().async {
+            do {
+                
+                let rendered: String = try self.stencilEnvironment.renderTemplate(
+                    name: path,
+                    context: context as? [String : Any]
+                )
+                
+                let renderedData = Data(rendered.utf8)
+                let view: View = View(data:renderedData)
+                
+                return promiseView.succeed(result: view)
             }
-            return promiseView.futureResult
+            catch {
+                promiseView.fail(error: error)
+            }
+        }
+        
+        return promiseView.futureResult
     }
 }
 
