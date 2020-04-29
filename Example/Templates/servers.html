@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+</head>
+
+<body>
+  <h1>Server-side technologies</h1>
+  <table>
+    {% for server in servers %}
+    <tr>
+      <td><b>{{ server.name }}</b></td>
+    </tr>
+    {% endfor %}
+  </table>
+
+</body>
+
+</html>
