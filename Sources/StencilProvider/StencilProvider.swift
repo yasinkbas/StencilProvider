@@ -23,6 +23,7 @@ public final class StencilProvider: Provider {
     }
 }
 
+
 public final class StencilRenderer: Service {
     
     private let container: Container
@@ -37,16 +38,16 @@ public final class StencilRenderer: Service {
         self.container = container
     }
     
-    public func render(_ path: String, _ context: [AnyHashable : Any]) -> Future<View> {
+    public func render(
+        _ path: String,
+        _ context: [AnyHashable : Any]
+    ) -> Future<View> {
         let promiseView: Promise<View> = container.eventLoop.newPromise(View.self)
         
         DispatchQueue.global().async {
             do {
-                
                 let rendered: String = try self.stencilEnvironment.renderTemplate(
-                    name: path,
-                    context: context as? [String : Any]
-                )
+                    name: path, context: context as? [String : Any])
                 
                 let renderedData = Data(rendered.utf8)
                 let view: View = View(data:renderedData)
@@ -61,6 +62,7 @@ public final class StencilRenderer: Service {
         return promiseView.futureResult
     }
 }
+
 
 public extension Request {
     func render(_ path: String, _ context: [AnyHashable: Any]) throws -> Future<View> {
